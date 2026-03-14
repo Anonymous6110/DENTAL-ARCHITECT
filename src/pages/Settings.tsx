@@ -5,7 +5,7 @@ import {
   Settings as SettingsIcon, Users, Database, 
   Tag, Palette, Save, Download, Upload, 
   Plus, Trash2, Shield, Bell, Globe,
-  RefreshCw, HardDrive, ShieldCheck
+  RefreshCw, HardDrive, ShieldCheck, Edit, X
 } from "lucide-react";
 import { User, RateList, Shade } from "../types";
 import { toast } from "react-hot-toast";
@@ -98,6 +98,9 @@ export default function Settings() {
   
   // Form states
   const [userForm, setUserForm] = useState({ username: "", password: "", role: "Staff" as "Staff" | "Admin" | "Doctor" | "Manager", doctor_id: "" });
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [editUserForm, setEditUserForm] = useState({ username: "", password: "", role: "Staff" as any, doctor_id: "" });
   const [rateForm, setRateForm] = useState({ case_type: "", material: "", price: "" });
   const [shadeForm, setShadeForm] = useState({ name: "" });
 
@@ -158,6 +161,38 @@ export default function Settings() {
       fetchUsers();
     } catch (err: any) {
       toast.error(err.message || "Failed to add user");
+    }
+  };
+
+  const handleEditUser = (user: any) => {
+    setEditingUser(user);
+    setEditUserForm({
+      username: user.username,
+      password: "", // Don't show hashed password
+      role: user.role,
+      doctor_id: user.doctor_id || ""
+    });
+    setIsEditUserModalOpen(true);
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    
+    try {
+      const res = await fetch(`/api/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editUserForm),
+      });
+      
+      if (!res.ok) throw new Error("Failed to update user");
+      
+      toast.success("User updated");
+      setIsEditUserModalOpen(false);
+      fetchUsers();
+    } catch (err) {
+      toast.error("Failed to update user");
     }
   };
 
@@ -574,7 +609,13 @@ export default function Settings() {
                             )}
                           </td>
                           <td className="px-6 py-4 text-sm text-zinc-500">{new Date(user.created_at).toLocaleDateString()}</td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-6 py-4 text-right flex justify-end gap-2">
+                            <button 
+                              onClick={() => handleEditUser(user)}
+                              className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                            >
+                              <Edit size={18} />
+                            </button>
                             <button 
                               onClick={() => handleDelete('users' as any, user.id)}
                               className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
@@ -756,6 +797,82 @@ export default function Settings() {
         message="Are you sure you want to delete this item? This action cannot be undone."
         confirmText="Delete"
       />
+
+      {/* Edit User Modal */}
+      <AnimatePresence>
+        {isEditUserModalOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              <div className="p-6 border-b border-zinc-100 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-zinc-900">Edit User</h2>
+                <button onClick={() => setIsEditUserModalOpen(false)} className="p-2 hover:bg-zinc-100 rounded-full transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-zinc-700">Username</label>
+                  <input 
+                    required
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    value={editUserForm.username}
+                    onChange={(e) => setEditUserForm({...editUserForm, username: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-zinc-700">New Password (leave blank to keep current)</label>
+                  <input 
+                    type="password"
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    value={editUserForm.password}
+                    onChange={(e) => setEditUserForm({...editUserForm, password: e.target.value})}
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-zinc-700">Role</label>
+                  <select 
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    value={editUserForm.role}
+                    onChange={(e) => setEditUserForm({...editUserForm, role: e.target.value as any})}
+                    disabled={editingUser?.username === 'admin'}
+                  >
+                    <option value="Staff">Staff (View Only)</option>
+                    <option value="Manager">Manager (Operations)</option>
+                    <option value="Admin">Admin (Full Access)</option>
+                    <option value="Doctor">Doctor (Specific Doctor)</option>
+                  </select>
+                </div>
+                {editUserForm.role === 'Doctor' && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-zinc-700">Linked Doctor</label>
+                    <select
+                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                      value={editUserForm.doctor_id}
+                      onChange={(e) => setEditUserForm({...editUserForm, doctor_id: e.target.value})}
+                      required
+                    >
+                      <option value="">Select Doctor</option>
+                      {doctors.map((doc: any) => (
+                        <option key={doc.id} value={doc.id}>{doc.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="flex gap-3 pt-4">
+                  <button type="button" onClick={() => setIsEditUserModalOpen(false)} className="flex-1 px-6 py-3 bg-zinc-100 text-zinc-600 font-bold rounded-xl hover:bg-zinc-200 transition-colors">Cancel</button>
+                  <button type="submit" className="flex-1 px-6 py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20">Update User</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

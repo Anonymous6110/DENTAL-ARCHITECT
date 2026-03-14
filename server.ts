@@ -1126,6 +1126,29 @@ try {
     res.json({ success: true });
   });
 
+  app.put("/api/users/:id", requireAdmin, (req, res) => {
+    const { id } = req.params;
+    const { username, password, role, doctor_id } = req.body;
+    try {
+      const user = db.prepare("SELECT * FROM users WHERE id = ?").get(id) as any;
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      let query = "UPDATE users SET username = ?, role = ?, doctor_id = ? WHERE id = ?";
+      let params = [username || user.username, role || user.role, doctor_id || user.doctor_id, id];
+
+      if (password) {
+        const hashedPassword = bcrypt.hashSync(password, 10);
+        query = "UPDATE users SET username = ?, password = ?, role = ?, doctor_id = ? WHERE id = ?";
+        params = [username || user.username, hashedPassword, role || user.role, doctor_id || user.doctor_id, id];
+      }
+
+      db.prepare(query).run(...params);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
   app.get("/api/rate-list", requireAuth, (req, res) => {
     const rates = db.prepare("SELECT * FROM rate_list ORDER BY case_type ASC").all();
     res.json(rates);

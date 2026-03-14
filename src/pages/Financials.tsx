@@ -478,8 +478,8 @@ export default function Financials() {
                     <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('doctor_name')}>
                       <div className="flex items-center">Doctor <SortIcon sortKey="doctor_name" currentSort={paymentSort} /></div>
                     </th>
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('invoice_no')}>
-                      <div className="flex items-center">Invoice <SortIcon sortKey="invoice_no" currentSort={paymentSort} /></div>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-right cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('amount')}>
+                      <div className="flex items-center justify-end">Amount <SortIcon sortKey="amount" currentSort={paymentSort} /></div>
                     </th>
                     <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('payment_method')}>
                       <div className="flex items-center">Payment Method <SortIcon sortKey="payment_method" currentSort={paymentSort} /></div>
@@ -490,9 +490,6 @@ export default function Financials() {
                     <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('notes')}>
                       <div className="flex items-center">Notes <SortIcon sortKey="notes" currentSort={paymentSort} /></div>
                     </th>
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-right cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('amount')}>
-                      <div className="flex items-center justify-end">Amount <SortIcon sortKey="amount" currentSort={paymentSort} /></div>
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
@@ -500,24 +497,16 @@ export default function Financials() {
                       <tr key={p.id} className="group hover:bg-zinc-50/50 transition-colors">
                         <td className="py-4 text-sm font-medium text-zinc-600">{format(new Date(p.payment_date), 'MMM d, yyyy')}</td>
                         <td className="py-4 text-sm font-bold text-zinc-900">{p.doctor_name}</td>
-                        <td className="py-4 text-sm text-zinc-500">
-                          {p.invoice_no ? (
-                            <span className="flex items-center gap-1 text-emerald-600 font-bold">
-                              <Receipt size={12} />
-                              INV-{p.invoice_no}
-                            </span>
-                          ) : "-"}
-                        </td>
+                        <td className="py-4 text-sm font-bold text-emerald-600 text-right">${(p.amount || 0).toLocaleString()}</td>
                         <td className="py-4">
-                        <span className="text-[10px] font-bold px-2 py-1 bg-zinc-100 text-zinc-600 rounded-md uppercase">
-                          {p.payment_method}
-                        </span>
-                      </td>
-                      <td className="py-4 text-sm text-zinc-500 font-mono">{p.reference_no || "-"}</td>
-                      <td className="py-4 text-sm text-zinc-500">{p.notes || "-"}</td>
-                      <td className="py-4 text-sm font-bold text-emerald-600 text-right">${(p.amount || 0).toLocaleString()}</td>
-                    </tr>
-                  ))}
+                          <span className="text-[10px] font-bold px-2 py-1 bg-zinc-100 text-zinc-600 rounded-md uppercase">
+                            {p.payment_method}
+                          </span>
+                        </td>
+                        <td className="py-4 text-sm text-zinc-500 font-mono">{p.reference_no || "-"}</td>
+                        <td className="py-4 text-sm text-zinc-500">{p.notes || "-"}</td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
