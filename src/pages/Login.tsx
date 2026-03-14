@@ -74,11 +74,6 @@ export default function Login({ onLogin }: LoginProps) {
           <div className="mb-8">
             <h2 className="text-xl font-bold text-white">Staff Login</h2>
             <p className="text-sm text-zinc-400 mt-1">Enter your credentials to access the lab dashboard.</p>
-            <div className="mt-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-              <p className="text-xs text-emerald-500 font-bold uppercase tracking-wider mb-1">Default Credentials</p>
-              <p className="text-sm text-zinc-300">User: <span className="text-white font-mono">admin</span></p>
-              <p className="text-sm text-zinc-300">Pass: <span className="text-white font-mono">admin123</span></p>
-            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">

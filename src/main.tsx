@@ -4,7 +4,12 @@ import App from './App.tsx';
 import './index.css';
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 
-const convexUrl = import.meta.env.VITE_CONVEX_URL || "https://pleasant-mammoth-827.convex.cloud";
+const rawConvexUrl = import.meta.env.VITE_CONVEX_URL || "https://pleasant-mammoth-827.convex.cloud";
+// Handle cases where the env var might be the string "undefined" or "null"
+const convexUrl = (rawConvexUrl === "undefined" || rawConvexUrl === "null") 
+  ? "https://pleasant-mammoth-827.convex.cloud" 
+  : rawConvexUrl;
+
 let convex: ConvexReactClient | null = null;
 
 try {
@@ -15,7 +20,7 @@ try {
     }
   }
 } catch (e) {
-  console.error("Failed to initialize Convex client. Ensure VITE_CONVEX_URL is a valid absolute URL.", e);
+  console.error("Failed to initialize Convex client:", e);
 }
 
 // Intercept fetch calls to add the Authorization token
@@ -42,18 +47,22 @@ const customFetch = async (...args: Parameters<typeof fetch>) => {
     }
   }
 
-  // Only intercept relative /api/ calls
-  if (token && typeof resource === 'string' && resource.startsWith('/api/')) {
-    config = config || {};
-    config.headers = {
-      ...config.headers,
-      'Authorization': `Bearer ${token}`
-    };
+  // Always use absolute URLs for /api/ calls to ensure consistency
+  if (typeof resource === 'string' && resource.startsWith('/api/')) {
     const absoluteUrl = new URL(resource, window.location.origin).toString();
+    
+    if (token) {
+      config = config || {};
+      config.headers = {
+        ...config.headers,
+        'Authorization': `Bearer ${token}`
+      };
+    }
+    
     return originalFetch(absoluteUrl, config);
   }
   
-  return originalFetch(...args);
+  return originalFetch(resource, config);
 };
 
 try {
@@ -73,9 +82,7 @@ createRoot(document.getElementById('root')!).render(
         <App />
       </ConvexProvider>
     ) : (
-      <div className="p-4 text-red-500">
-        Convex URL is not configured. Please add VITE_CONVEX_URL to your settings.
-      </div>
+      <App />
     )}
   </StrictMode>,
 );

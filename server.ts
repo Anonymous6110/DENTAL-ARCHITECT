@@ -182,10 +182,14 @@ const defaultPassword = 'admin123';
 if (!adminUser) {
   const hashedPassword = bcrypt.hashSync(defaultPassword, 10);
   db.prepare("INSERT INTO users (username, password, role) VALUES (?, ?, 'Admin')").run('admin', hashedPassword);
+  console.log("Default admin user created: admin / admin123");
 } else if (!adminUser.password.startsWith('$2a$') && !adminUser.password.startsWith('$2b$')) {
   // If password is not hashed, hash it
   const hashedPassword = bcrypt.hashSync(defaultPassword, 10);
   db.prepare("UPDATE users SET password = ? WHERE username = 'admin'").run(hashedPassword);
+  console.log("Default admin user password hashed");
+} else {
+  console.log("Default admin user already exists and is hashed");
 }
 
 // Migration: Ensure specialization column exists
@@ -463,7 +467,7 @@ try {
         const isMatch = await bcrypt.compare(password, user.password);
         
         if (isMatch) {
-          const crypto = require('crypto');
+          const crypto = await import('crypto');
           const token = crypto.randomBytes(32).toString('hex');
           
           db.prepare("UPDATE users SET token = ? WHERE id = ?").run(token, user.id);
@@ -479,6 +483,7 @@ try {
       }
       res.status(401).json({ error: "Invalid credentials" });
     } catch (err: any) {
+      console.error("Login error:", err);
       res.status(500).json({ error: "Internal server error" });
     }
   });
