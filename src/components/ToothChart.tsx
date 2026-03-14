@@ -35,59 +35,52 @@ export default function ToothChart({ selectedTeeth, onToggleTooth }: ToothChartP
     const isPremolar = [15, 14, 24, 25, 34, 35, 44, 45].includes(num);
     const isCanine = [13, 23, 33, 43].includes(num);
     
-    // Anatomical curve offsets
-    const curveOffsets = [12, 6, 2, 0, 0, 2, 6, 12];
+    // Anatomical curve offsets (percentages for responsiveness)
+    const curveOffsets = [25, 12, 4, 0, 0, 4, 12, 25];
     const offset = curveOffsets[index] || 0;
-    const translateY = isUpper ? -offset : offset;
+    const translateY = isUpper ? `-${offset}%` : `${offset}%`;
 
     return (
       <button
         key={num}
         type="button"
         onClick={() => onToggleTooth(num)}
-        style={{ transform: `translateY(${translateY}px)` }}
+        style={{ transform: `translateY(${translateY})` }}
         className={cn(
-          "relative group transition-all duration-300 flex-shrink-0",
+          "relative group transition-all duration-300",
+          isMolar ? "flex-[1.5]" : isPremolar ? "flex-[1.2]" : "flex-1",
           isSelected ? "scale-110 z-10" : "hover:scale-105"
         )}
       >
         <div className={cn(
-          "flex flex-col items-center justify-center border-2 transition-all relative overflow-hidden",
-          isMolar ? "w-8 h-12 md:w-10 md:h-14 rounded-xl" : isPremolar ? "w-7 h-10 md:w-8 md:h-12 rounded-lg" : isCanine ? "w-6 h-10 md:w-7 md:h-12 rounded-full" : "w-5 h-9 md:w-6 md:h-11 rounded-t-full rounded-b-md",
+          "flex flex-col items-center justify-center border-2 transition-all relative overflow-hidden w-full",
+          isMolar ? "aspect-[2/3] rounded-lg md:rounded-xl" : isPremolar ? "aspect-[2/3] rounded-md md:rounded-lg" : isCanine ? "aspect-[1/2] rounded-full" : "aspect-[1/2] rounded-t-full rounded-b-md",
           isSelected 
             ? "bg-emerald-500 border-emerald-600 text-white shadow-xl shadow-emerald-500/40" 
             : "bg-white border-zinc-200 text-zinc-400 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50/30"
         )}>
           {/* Tooth Number */}
           <span className={cn(
-            "text-[7px] md:text-[8px] font-black absolute top-0.5",
+            "text-[6px] sm:text-[8px] md:text-[10px] font-black absolute top-0.5 sm:top-1",
             isSelected ? "text-white" : "text-zinc-300"
           )}>{notation === 'FDI' ? num : getUniversal(num)}</span>
           
           {/* Anatomical Shape Simulation */}
           <div className={cn(
-            "mt-2 rounded-full border transition-all",
-            isMolar ? "w-5 h-5 md:w-6 md:h-6" : isPremolar ? "w-4 h-4 md:w-5 md:h-5" : "w-3 h-5 md:w-4 md:h-6",
+            "mt-2 sm:mt-3 rounded-full border transition-all w-1/2 h-1/2",
             isSelected ? "border-white/40 bg-white/30" : "border-zinc-100 bg-zinc-50"
           )}>
             <div className="w-full h-full flex items-center justify-center">
               <div className={cn(
-                "rounded-full blur-[1px]",
-                isMolar ? "w-2 h-2 md:w-3 md:h-3" : "w-1.5 h-1.5 md:w-2 md:h-2",
+                "rounded-full blur-[1px] w-1/2 h-1/2",
                 isSelected ? "bg-white/60" : "bg-zinc-200/50"
               )} />
             </div>
           </div>
-          
-          {/* Root Simulation */}
-          <div className={cn(
-            "w-0.5 h-1.5 md:h-2 mt-0.5 rounded-full",
-            isSelected ? "bg-white/30" : "bg-zinc-100"
-          )} />
         </div>
         
         {/* Hover Label */}
-        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20">
+        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 hidden sm:block">
           <span className="bg-zinc-900 text-white text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">
             {isMolar ? 'Molar' : isPremolar ? 'Premolar' : isCanine ? 'Canine' : 'Incisor'} {num}
           </span>
@@ -128,50 +121,50 @@ export default function ToothChart({ selectedTeeth, onToggleTooth }: ToothChartP
         </div>
       </div>
       
-      <div className="space-y-4 md:space-y-6 w-full mx-auto overflow-x-auto pb-4 px-4">
+      <div className="space-y-4 md:space-y-6 w-full mx-auto pb-4 px-1 sm:px-4">
         {/* Upper Arch */}
-        <div className="space-y-2 min-w-[700px]">
-          <div className="flex justify-between px-10 mb-2">
-            <span className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">Quadrant 1 (UR)</span>
-            <span className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">Quadrant 2 (UL)</span>
+        <div className="space-y-2 w-full">
+          <div className="flex justify-between px-4 sm:px-10 mb-2">
+            <span className="text-[7px] sm:text-[9px] font-black text-zinc-300 uppercase tracking-widest">Quadrant 1 (UR)</span>
+            <span className="text-[7px] sm:text-[9px] font-black text-zinc-300 uppercase tracking-widest">Quadrant 2 (UL)</span>
           </div>
-          <div className="flex justify-center items-end gap-1 md:gap-2">
-            <div className="flex gap-1 md:gap-1.5 items-end justify-end flex-1">
+          <div className="flex justify-center items-end gap-0.5 sm:gap-1 md:gap-2 w-full">
+            <div className="flex gap-0.5 sm:gap-1 md:gap-1.5 items-end justify-end flex-1">
               {upperRight.map((n, i) => renderTooth(n, i, true))}
             </div>
-            <div className="w-px h-12 bg-zinc-200 mx-2 md:mx-4 self-center opacity-50" />
-            <div className="flex gap-1 md:gap-1.5 items-end justify-start flex-1">
+            <div className="w-px h-8 sm:h-12 bg-zinc-200 mx-1 sm:mx-2 md:mx-4 self-center opacity-50" />
+            <div className="flex gap-0.5 sm:gap-1 md:gap-1.5 items-end justify-start flex-1">
               {upperLeft.map((n, i) => renderTooth(n, 7-i, true))}
             </div>
           </div>
-          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em] text-center">Upper Arch (Maxilla)</p>
+          <p className="text-[8px] sm:text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] sm:tracking-[0.4em] text-center mt-4">Upper Arch (Maxilla)</p>
         </div>
 
         {/* Divider / Occlusal Plane */}
-        <div className="relative py-2 min-w-[700px]">
+        <div className="relative py-2 w-full">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t-2 border-dashed border-zinc-100"></div>
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-white px-8 text-[10px] font-black text-zinc-300 uppercase tracking-[0.5em]">Occlusal Plane</span>
+            <span className="bg-white px-4 sm:px-8 text-[8px] sm:text-[10px] font-black text-zinc-300 uppercase tracking-[0.2em] sm:tracking-[0.5em]">Occlusal Plane</span>
           </div>
         </div>
 
         {/* Lower Arch */}
-        <div className="space-y-2 min-w-[700px]">
-          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em] text-center">Lower Arch (Mandible)</p>
-          <div className="flex justify-center items-start gap-1 md:gap-2">
-            <div className="flex gap-1 md:gap-1.5 items-start justify-end flex-1">
+        <div className="space-y-2 w-full">
+          <p className="text-[8px] sm:text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] sm:tracking-[0.4em] text-center mb-4">Lower Arch (Mandible)</p>
+          <div className="flex justify-center items-start gap-0.5 sm:gap-1 md:gap-2 w-full">
+            <div className="flex gap-0.5 sm:gap-1 md:gap-1.5 items-start justify-end flex-1">
               {lowerRight.map((n, i) => renderTooth(n, i, false))}
             </div>
-            <div className="w-px h-12 bg-zinc-200 mx-2 md:mx-4 self-center opacity-50" />
-            <div className="flex gap-1 md:gap-1.5 items-start justify-start flex-1">
+            <div className="w-px h-8 sm:h-12 bg-zinc-200 mx-1 sm:mx-2 md:mx-4 self-center opacity-50" />
+            <div className="flex gap-0.5 sm:gap-1 md:gap-1.5 items-start justify-start flex-1">
               {lowerLeft.map((n, i) => renderTooth(n, 7-i, false))}
             </div>
           </div>
-          <div className="flex justify-between px-10 mt-2">
-            <span className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">Quadrant 4 (LR)</span>
-            <span className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">Quadrant 3 (LL)</span>
+          <div className="flex justify-between px-4 sm:px-10 mt-2">
+            <span className="text-[7px] sm:text-[9px] font-black text-zinc-300 uppercase tracking-widest">Quadrant 4 (LR)</span>
+            <span className="text-[7px] sm:text-[9px] font-black text-zinc-300 uppercase tracking-widest">Quadrant 3 (LL)</span>
           </div>
         </div>
       </div>

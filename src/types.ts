@@ -7,6 +7,7 @@ export interface Doctor {
   address: string;
   specialization: string;
   image_url: string;
+  notes?: string;
   portal_username?: string;
   created_at: number;
 }

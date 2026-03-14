@@ -4,7 +4,8 @@ import {
   DollarSign, Plus, Search, Calendar, 
   TrendingUp, TrendingDown, Wallet, 
   ArrowUpRight, ArrowDownRight, Filter,
-  CreditCard, Banknote, Receipt, X
+  CreditCard, Banknote, Receipt, X,
+  ChevronUp, ChevronDown, ChevronsUpDown
 } from "lucide-react";
 import { Payment, Expense, Doctor } from "../types";
 import { format, startOfMonth, eachDayOfInterval, subDays, isSameDay } from "date-fns";
@@ -151,6 +152,64 @@ export default function Financials() {
     } catch (err) {
       toast.error("Failed to record expense");
     }
+  };
+
+  const [paymentSort, setPaymentSort] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'payment_date', direction: 'desc' });
+  const [expenseSort, setExpenseSort] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'expense_date', direction: 'desc' });
+
+  const handlePaymentSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (paymentSort.key === key && paymentSort.direction === 'asc') {
+      direction = 'desc';
+    }
+    setPaymentSort({ key, direction });
+  };
+
+  const handleExpenseSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (expenseSort.key === key && expenseSort.direction === 'asc') {
+      direction = 'desc';
+    }
+    setExpenseSort({ key, direction });
+  };
+
+  const sortedPayments = [...payments].sort((a, b) => {
+    let aVal = a[paymentSort.key];
+    let bVal = b[paymentSort.key];
+    
+    if (paymentSort.key === 'amount') {
+      aVal = Number(aVal) || 0;
+      bVal = Number(bVal) || 0;
+    } else {
+      aVal = String(aVal || '').toLowerCase();
+      bVal = String(bVal || '').toLowerCase();
+    }
+
+    if (aVal < bVal) return paymentSort.direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return paymentSort.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const sortedExpenses = [...expenses].sort((a, b) => {
+    let aVal = a[expenseSort.key];
+    let bVal = b[expenseSort.key];
+    
+    if (expenseSort.key === 'amount') {
+      aVal = Number(aVal) || 0;
+      bVal = Number(bVal) || 0;
+    } else {
+      aVal = String(aVal || '').toLowerCase();
+      bVal = String(bVal || '').toLowerCase();
+    }
+
+    if (aVal < bVal) return expenseSort.direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return expenseSort.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const SortIcon = ({ sortKey, currentSort }: { sortKey: string, currentSort: { key: string, direction: string } }) => {
+    if (currentSort.key !== sortKey) return <ChevronsUpDown size={12} className="ml-1 opacity-20" />;
+    return currentSort.direction === 'asc' ? <ChevronUp size={12} className="ml-1 text-emerald-500" /> : <ChevronDown size={12} className="ml-1 text-emerald-500" />;
   };
 
   if (loading) return <div className="flex items-center justify-center h-64">Loading...</div>;
@@ -413,16 +472,31 @@ export default function Financials() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-zinc-50">
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Date</th>
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Doctor</th>
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Invoice</th>
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Method</th>
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Ref No</th>
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-right">Amount</th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('payment_date')}>
+                      <div className="flex items-center">Date <SortIcon sortKey="payment_date" currentSort={paymentSort} /></div>
+                    </th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('doctor_name')}>
+                      <div className="flex items-center">Doctor <SortIcon sortKey="doctor_name" currentSort={paymentSort} /></div>
+                    </th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('invoice_no')}>
+                      <div className="flex items-center">Invoice <SortIcon sortKey="invoice_no" currentSort={paymentSort} /></div>
+                    </th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('payment_method')}>
+                      <div className="flex items-center">Payment Method <SortIcon sortKey="payment_method" currentSort={paymentSort} /></div>
+                    </th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('reference_no')}>
+                      <div className="flex items-center">Reference Number <SortIcon sortKey="reference_no" currentSort={paymentSort} /></div>
+                    </th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('notes')}>
+                      <div className="flex items-center">Notes <SortIcon sortKey="notes" currentSort={paymentSort} /></div>
+                    </th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-right cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handlePaymentSort('amount')}>
+                      <div className="flex items-center justify-end">Amount <SortIcon sortKey="amount" currentSort={paymentSort} /></div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
-                    {payments.map((p: any) => (
+                    {sortedPayments.map((p: any) => (
                       <tr key={p.id} className="group hover:bg-zinc-50/50 transition-colors">
                         <td className="py-4 text-sm font-medium text-zinc-600">{format(new Date(p.payment_date), 'MMM d, yyyy')}</td>
                         <td className="py-4 text-sm font-bold text-zinc-900">{p.doctor_name}</td>
@@ -440,6 +514,7 @@ export default function Financials() {
                         </span>
                       </td>
                       <td className="py-4 text-sm text-zinc-500 font-mono">{p.reference_no || "-"}</td>
+                      <td className="py-4 text-sm text-zinc-500">{p.notes || "-"}</td>
                       <td className="py-4 text-sm font-bold text-emerald-600 text-right">${(p.amount || 0).toLocaleString()}</td>
                     </tr>
                   ))}
@@ -451,14 +526,22 @@ export default function Financials() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-zinc-50">
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Date</th>
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Category</th>
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Description</th>
-                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-right">Amount</th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handleExpenseSort('expense_date')}>
+                      <div className="flex items-center">Expense Date <SortIcon sortKey="expense_date" currentSort={expenseSort} /></div>
+                    </th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handleExpenseSort('category')}>
+                      <div className="flex items-center">Category <SortIcon sortKey="category" currentSort={expenseSort} /></div>
+                    </th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handleExpenseSort('description')}>
+                      <div className="flex items-center">Description <SortIcon sortKey="description" currentSort={expenseSort} /></div>
+                    </th>
+                    <th className="pb-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-right cursor-pointer hover:text-zinc-600 transition-colors" onClick={() => handleExpenseSort('amount')}>
+                      <div className="flex items-center justify-end">Amount <SortIcon sortKey="amount" currentSort={expenseSort} /></div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
-                  {expenses.map((e: any) => (
+                  {sortedExpenses.map((e: any) => (
                     <tr key={e.id} className="group hover:bg-zinc-50/50 transition-colors">
                       <td className="py-4 text-sm font-medium text-zinc-600">{format(new Date(e.expense_date), 'MMM d, yyyy')}</td>
                       <td className="py-4">

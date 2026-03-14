@@ -11,6 +11,8 @@ function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(' ');
 }
 
+const DEFAULT_CASE_TYPES = ['Crown', 'Bridge', 'Implant', 'Veneer', 'Denture', 'Inlay', 'Onlay', 'Night Guard'];
+
 export default function NewCase() {
   const navigate = useNavigate();
   
@@ -19,6 +21,7 @@ export default function NewCase() {
   const [shades, setShades] = useState<any[]>([]);
   const [rates, setRates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCustomCaseType, setIsCustomCaseType] = useState(false);
 
   const [formData, setFormData] = useState({
     doctor_id: "" as any,
@@ -37,6 +40,10 @@ export default function NewCase() {
     preparation_type: ""
   });
   const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
+
+  const caseTypes = rates.length > 0 
+    ? Array.from(new Set(rates.map(r => r.case_type)))
+    : DEFAULT_CASE_TYPES;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,6 +91,8 @@ export default function NewCase() {
         material: rates[0].material,
         cost: rates[0].price.toString()
       }));
+    } else if (!formData.case_type) {
+      setFormData(prev => ({ ...prev, case_type: DEFAULT_CASE_TYPES[0] }));
     }
     if (shades.length > 0 && !formData.shade) {
       setFormData(prev => ({ ...prev, shade: shades[0].name }));
@@ -246,54 +255,63 @@ export default function NewCase() {
               <Briefcase size={18} className="mr-2" /> Case Specifications
             </div>
               <div className="space-y-4">
-                <label className="text-sm font-bold text-zinc-700">Case Type</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {Array.from(new Set(rates.map(r => r.case_type))).length > 0 ? (
-                    Array.from(new Set(rates.map(r => r.case_type))).map(type => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setFormData({...formData, case_type: type, material: ""})}
-                        className={cn(
-                          "p-4 rounded-2xl border-2 transition-all text-left group",
-                          formData.case_type === type 
-                            ? "bg-emerald-50 border-emerald-500 shadow-md shadow-emerald-500/10" 
-                            : "bg-zinc-50 border-zinc-100 hover:border-emerald-200"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-colors",
-                          formData.case_type === type ? "bg-emerald-500 text-white" : "bg-white text-zinc-400 group-hover:text-emerald-500"
-                        )}>
-                          <Briefcase size={20} />
-                        </div>
-                        <p className={cn("font-bold text-sm", formData.case_type === type ? "text-emerald-900" : "text-zinc-600")}>{type}</p>
-                      </button>
-                    ))
-                  ) : (
-                    ['Crown', 'Bridge', 'Implant', 'Veneer', 'Denture'].map(type => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setFormData({...formData, case_type: type, material: ""})}
-                        className={cn(
-                          "p-4 rounded-2xl border-2 transition-all text-left group",
-                          formData.case_type === type 
-                            ? "bg-emerald-50 border-emerald-500 shadow-md shadow-emerald-500/10" 
-                            : "bg-zinc-50 border-zinc-100 hover:border-emerald-200"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-colors",
-                          formData.case_type === type ? "bg-emerald-500 text-white" : "bg-white text-zinc-400 group-hover:text-emerald-500"
-                        )}>
-                          <Briefcase size={20} />
-                        </div>
-                        <p className={cn("font-bold text-sm", formData.case_type === type ? "text-emerald-900" : "text-zinc-600")}>{type}</p>
-                      </button>
-                    ))
-                  )}
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-zinc-700">Case Type</label>
+                  <button 
+                    type="button"
+                    onClick={() => setIsCustomCaseType(!isCustomCaseType)}
+                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
+                  >
+                    {isCustomCaseType ? "Select from list" : "Enter custom type"}
+                  </button>
                 </div>
+
+                {isCustomCaseType ? (
+                  <input 
+                    type="text"
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    value={formData.case_type}
+                    onChange={(e) => setFormData({...formData, case_type: e.target.value, material: ""})}
+                    placeholder="Enter custom case type..."
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    <select 
+                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                      value={formData.case_type}
+                      onChange={(e) => setFormData({...formData, case_type: e.target.value, material: ""})}
+                    >
+                      <option value="">Select case type</option>
+                      {caseTypes.map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {caseTypes.slice(0, 8).map(type => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setFormData({...formData, case_type: type, material: ""})}
+                          className={cn(
+                            "p-3 rounded-xl border-2 transition-all text-left group flex items-center",
+                            formData.case_type === type 
+                              ? "bg-emerald-50 border-emerald-500 shadow-sm" 
+                              : "bg-zinc-50 border-zinc-100 hover:border-emerald-200"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-6 h-6 rounded-lg flex items-center justify-center mr-2 transition-colors",
+                            formData.case_type === type ? "bg-emerald-500 text-white" : "bg-white text-zinc-400 group-hover:text-emerald-500"
+                          )}>
+                            <Briefcase size={12} />
+                          </div>
+                          <p className={cn("font-bold text-[10px] truncate", formData.case_type === type ? "text-emerald-900" : "text-zinc-600")}>{type}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">

@@ -24,8 +24,11 @@ db.exec(
   "  address TEXT," +
   "  specialization TEXT," +
   "  image_url TEXT," +
+  "  notes TEXT," +
   "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
   ");" +
+  "" +
+  "try { db.exec(\"ALTER TABLE doctors ADD COLUMN notes TEXT;\"); } catch (e) {}" +
   "" +
   "CREATE TABLE IF NOT EXISTS technicians (" +
   "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -45,6 +48,8 @@ db.exec(
   "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
   "  FOREIGN KEY (doctor_id) REFERENCES doctors(id)" +
   ");" +
+  "" +
+  "try { db.exec(\"ALTER TABLE users ADD COLUMN token TEXT;\"); } catch (e) {}" +
   "" +
   "CREATE TABLE IF NOT EXISTS invoices (" +
   "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -373,27 +378,61 @@ async function startServer() {
 
   // Middleware to check authentication
   const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if ((req.session as any).user) {
-      next();
-    } else {
-      res.status(401).json({ error: "Not authenticated" });
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const user = db.prepare("SELECT * FROM users WHERE token = ?").get(token) as any;
+      if (user) {
+        const { password: _, ...userWithoutPassword } = user;
+        (req as any).user = userWithoutPassword;
+        return next();
+      }
     }
+    
+    if ((req.session as any).user) {
+      (req as any).user = (req.session as any).user;
+      return next();
+    }
+    
+    res.status(401).json({ error: "Not authenticated" });
   };
 
   const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if ((req.session as any).user && (req.session as any).user.role === 'Admin') {
-      next();
-    } else {
-      res.status(403).json({ error: "Admin access required" });
+    const authHeader = req.headers.authorization;
+    let user = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      user = db.prepare("SELECT * FROM users WHERE token = ?").get(token) as any;
+    } else if ((req.session as any).user) {
+      user = (req.session as any).user;
     }
+    
+    if (user && user.role === 'Admin') {
+      (req as any).user = user;
+      return next();
+    }
+    
+    res.status(403).json({ error: "Admin access required" });
   };
 
   const requireManager = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if ((req.session as any).user && ['Admin', 'Manager'].includes((req.session as any).user.role)) {
-      next();
-    } else {
-      res.status(403).json({ error: "Manager access required" });
+    const authHeader = req.headers.authorization;
+    let user = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      user = db.prepare("SELECT * FROM users WHERE token = ?").get(token) as any;
+    } else if ((req.session as any).user) {
+      user = (req.session as any).user;
     }
+    
+    if (user && ['Admin', 'Manager'].includes(user.role)) {
+      (req as any).user = user;
+      return next();
+    }
+    
+    res.status(403).json({ error: "Manager access required" });
   };
 
   // Migration for existing database
@@ -423,9 +462,17 @@ try {
         const isMatch = await bcrypt.compare(password, user.password);
         
         if (isMatch) {
+          const crypto = require('crypto');
+          const token = crypto.randomBytes(32).toString('hex');
+          
+          db.prepare("UPDATE users SET token = ? WHERE id = ?").run(token, user.id);
+          
           const { password: _, ...userWithoutPassword } = user;
+          userWithoutPassword.token = token;
+          
           (req.session as any).userId = user.id;
           (req.session as any).user = userWithoutPassword;
+          
           return res.json(userWithoutPassword);
         }
       }
@@ -436,6 +483,12 @@ try {
   });
 
   app.post("/api/logout", (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      db.prepare("UPDATE users SET token = NULL WHERE token = ?").run(token);
+    }
+    
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ error: "Could not log out" });
@@ -445,6 +498,16 @@ try {
   });
 
   app.get("/api/me", (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const user = db.prepare("SELECT * FROM users WHERE token = ?").get(token) as any;
+      if (user) {
+        const { password: _, ...userWithoutPassword } = user;
+        return res.json(userWithoutPassword);
+      }
+    }
+    
     if ((req.session as any).user) {
       res.json((req.session as any).user);
     } else {
@@ -479,12 +542,29 @@ try {
     res.json(doctors);
   });
 
+  app.get("/api/doctors/:id", requireAuth, (req, res) => {
+    try {
+      const doctor = db.prepare(
+        "SELECT doctors.*, " +
+        "(SELECT username FROM users WHERE users.doctor_id = doctors.id LIMIT 1) as portal_username " +
+        "FROM doctors " +
+        "WHERE id = ?"
+      ).get(req.params.id);
+      if (!doctor) {
+        return res.status(404).json({ error: "Doctor not found" });
+      }
+      res.json(doctor);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/doctors", requireAuth, (req, res) => {
     try {
-      const { name, clinic_name, phone, email, address, specialization, image_url } = req.body;
+      const { name, clinic_name, phone, email, address, specialization, image_url, notes } = req.body;
       const info = db.prepare(
-        "INSERT INTO doctors (name, clinic_name, phone, email, address, specialization, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)"
-      ).run(name, clinic_name, phone, email, address, specialization, image_url);
+        "INSERT INTO doctors (name, clinic_name, phone, email, address, specialization, image_url, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      ).run(name, clinic_name, phone, email, address, specialization, image_url, notes);
       res.json({ id: info.lastInsertRowid });
     } catch (error: any) {
       console.error("Error adding doctor:", error);
@@ -494,12 +574,12 @@ try {
 
   app.put("/api/doctors/:id", requireAuth, (req, res) => {
     try {
-      const { name, clinic_name, phone, email, address, specialization, image_url } = req.body;
+      const { name, clinic_name, phone, email, address, specialization, image_url, notes } = req.body;
       db.prepare(
         "UPDATE doctors " +
-        "SET name = ?, clinic_name = ?, phone = ?, email = ?, address = ?, specialization = ?, image_url = ? " +
+        "SET name = ?, clinic_name = ?, phone = ?, email = ?, address = ?, specialization = ?, image_url = ?, notes = ? " +
         "WHERE id = ?"
-      ).run(name, clinic_name, phone, email, address, specialization, image_url, req.params.id);
+      ).run(name, clinic_name, phone, email, address, specialization, image_url, notes, req.params.id);
       res.json({ success: true });
     } catch (error: any) {
       console.error("Error updating doctor:", error);
@@ -814,7 +894,7 @@ try {
 
   app.get("/api/doctors/:id/portal-data", requireAuth, (req, res) => {
     const doctorId = req.params.id;
-    const user = (req.session as any).user;
+    const user = (req as any).user;
 
     // Doctors can only see their own data, Admins can see everything
     if (user.role === 'Doctor' && String(user.doctor_id) !== String(doctorId)) {

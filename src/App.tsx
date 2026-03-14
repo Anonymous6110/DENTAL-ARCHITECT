@@ -53,7 +53,7 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
   const navItems: { path: string; icon: any; label: string; tab?: string }[] = [
     { path: "/", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/cases", icon: Briefcase, label: "Cases" },
-    { path: "/doctors", icon: Users, label: "Doctors" },
+    { path: "/doctors", icon: Users, label: "Doctor Profiles" },
     { path: "/technicians", icon: UserCog, label: "Technicians" },
     { path: "/financials", icon: Wallet, label: "Financials" },
     { path: "/invoices", icon: FileText, label: "Invoices" },

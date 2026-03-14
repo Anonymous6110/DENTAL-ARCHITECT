@@ -21,7 +21,8 @@ const INITIAL_DOCTOR_STATE = {
   email: "",
   address: "",
   specialization: "",
-  image_url: ""
+  image_url: "",
+  notes: ""
 };
 
 export default function Doctors() {
@@ -32,8 +33,10 @@ export default function Doctors() {
   const [loading, setLoading] = useState(false);
   const [selectedDoctorId, setSelectedDoctorId] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<any>(null);
+  const [viewingDoctor, setViewingDoctor] = useState<any>(null);
   const [formData, setFormData] = useState(INITIAL_DOCTOR_STATE);
   const [userFormData, setUserFormData] = useState({ username: "", password: "" });
   const [search, setSearch] = useState("");
@@ -68,13 +71,19 @@ export default function Doctors() {
         email: doctor.email || "",
         address: doctor.address || "",
         specialization: doctor.specialization || "",
-        image_url: doctor.image_url || ""
+        image_url: doctor.image_url || "",
+        notes: doctor.notes || ""
       });
     } else {
       setEditingDoctor(null);
       setFormData(INITIAL_DOCTOR_STATE);
     }
     setIsModalOpen(true);
+  };
+
+  const handleOpenViewModal = (doctor: any) => {
+    setViewingDoctor(doctor);
+    setIsViewModalOpen(true);
   };
 
   const handleOpenUserModal = async (doctor: any) => {
@@ -197,7 +206,7 @@ export default function Doctors() {
     <div className="space-y-8">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900 font-sans">Doctor Management</h1>
+          <h1 className="text-3xl font-bold text-zinc-900 font-sans">Doctor Profiles</h1>
           <p className="text-zinc-500 mt-1">Manage your dentist clients, their specializations, and contact details.</p>
         </div>
         <button 
@@ -254,7 +263,8 @@ export default function Doctors() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-white p-6 rounded-3xl shadow-sm border border-zinc-100 hover:border-emerald-500/30 transition-all group relative overflow-hidden"
+              className="bg-white p-6 rounded-3xl shadow-sm border border-zinc-100 hover:border-emerald-500/30 transition-all group relative overflow-hidden cursor-pointer"
+              onClick={() => handleOpenViewModal(doctor)}
             >
               <div className="flex items-start gap-4 mb-6">
                 <div className="relative">
@@ -309,7 +319,7 @@ export default function Doctors() {
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-50">
+              <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-50" onClick={(e) => e.stopPropagation()}>
                 <button 
                   onClick={() => navigate(`/invoices?doctor_id=${doctor.id}`)}
                   className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-xs hover:bg-emerald-100 transition-colors flex items-center gap-2"
@@ -370,7 +380,11 @@ export default function Doctors() {
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {filteredDoctors.map((doctor) => (
-                <tr key={doctor.id} className="hover:bg-zinc-50/50 transition-colors">
+                <tr 
+                  key={doctor.id} 
+                  className="hover:bg-zinc-50/50 transition-colors cursor-pointer"
+                  onClick={() => handleOpenViewModal(doctor)}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-400">
@@ -391,7 +405,7 @@ export default function Doctors() {
                       <p className="flex items-center gap-1.5"><Mail size={12} /> {doctor.email}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-2">
                       <button 
                         onClick={() => navigate(`/doctors/${doctor.id}/ledger`)} 
@@ -532,6 +546,17 @@ export default function Doctors() {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Notes</label>
+                  <textarea 
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-sans resize-none"
+                    rows={4}
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    placeholder="Any relevant notes about the doctor..."
+                  />
+                </div>
+
                 <div className="flex gap-4 pt-6">
                   <button 
                     type="button"
@@ -548,6 +573,114 @@ export default function Doctors() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isViewModalOpen && viewingDoctor && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            >
+              <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+                    {viewingDoctor.image_url ? (
+                      <img src={viewingDoctor.image_url} alt={viewingDoctor.name} className="w-full h-full object-cover rounded-2xl" />
+                    ) : (
+                      <User size={32} />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-zinc-900">{viewingDoctor.name}</h2>
+                    <p className="text-emerald-600 font-medium">{viewingDoctor.clinic_name}</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsViewModalOpen(false)} className="p-2 hover:bg-zinc-200 rounded-full transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="p-8 space-y-8 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Contact Information</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center text-zinc-600">
+                          <Phone size={18} className="mr-3 text-zinc-400" /> {viewingDoctor.phone || 'N/A'}
+                        </div>
+                        <div className="flex items-center text-zinc-600">
+                          <Mail size={18} className="mr-3 text-zinc-400" /> {viewingDoctor.email || 'N/A'}
+                        </div>
+                        <div className="flex items-center text-zinc-600">
+                          <MapPin size={18} className="mr-3 text-zinc-400" /> {viewingDoctor.address || 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Professional Details</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center text-zinc-600">
+                          <Stethoscope size={18} className="mr-3 text-zinc-400" /> {viewingDoctor.specialization || 'General Dentistry'}
+                        </div>
+                        <div className="flex items-center text-zinc-600">
+                          <Building2 size={18} className="mr-3 text-zinc-400" /> {viewingDoctor.clinic_name}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Notes</h3>
+                      <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 min-h-[100px] text-sm text-zinc-600 whitespace-pre-wrap">
+                        {viewingDoctor.notes || 'No notes available.'}
+                      </div>
+                    </div>
+
+                    {viewingDoctor.portal_username && (
+                      <div>
+                        <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Portal Access</h3>
+                        <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <User size={16} className="text-emerald-600" />
+                            <span className="font-bold text-emerald-900">{viewingDoctor.portal_username}</span>
+                          </div>
+                          <span className="px-2 py-0.5 bg-emerald-500 text-white text-[10px] font-bold rounded-md">Active</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-6 border-t border-zinc-100">
+                  <button 
+                    onClick={() => {
+                      setIsViewModalOpen(false);
+                      navigate(`/doctors/${viewingDoctor.id}/ledger`);
+                    }}
+                    className="flex-1 px-6 py-4 bg-blue-500 text-white font-bold rounded-2xl hover:bg-blue-600 transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center"
+                  >
+                    <FileText size={20} className="mr-2" /> View Ledger
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsViewModalOpen(false);
+                      handleOpenModal(viewingDoctor);
+                    }}
+                    className="flex-1 px-6 py-4 bg-zinc-900 text-white font-bold rounded-2xl hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-900/20 flex items-center justify-center"
+                  >
+                    <Edit3 size={20} className="mr-2" /> Edit Profile
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

@@ -595,7 +595,7 @@ export default function Invoices() {
                   onClick={() => handleSort('invoice_date')}
                 >
                   <div className="flex items-center gap-1">
-                    Date
+                    Invoice Date
                     <div className="flex flex-col">
                       <ChevronUp size={10} className={cn(sortConfig?.key === 'invoice_date' && sortConfig.direction === 'asc' ? "text-emerald-500" : "text-zinc-300")} />
                       <ChevronDown size={10} className={cn(sortConfig?.key === 'invoice_date' && sortConfig.direction === 'desc' ? "text-emerald-500" : "text-zinc-300")} />
@@ -626,7 +626,18 @@ export default function Invoices() {
                     </div>
                   </div>
                 </th>
-                <th className="px-6 py-4">Status</th>
+                <th 
+                  className="px-6 py-4 cursor-pointer hover:bg-zinc-100 transition-colors group"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center gap-1">
+                    Status
+                    <div className="flex flex-col">
+                      <ChevronUp size={10} className={cn(sortConfig?.key === 'status' && sortConfig.direction === 'asc' ? "text-emerald-500" : "text-zinc-300")} />
+                      <ChevronDown size={10} className={cn(sortConfig?.key === 'status' && sortConfig.direction === 'desc' ? "text-emerald-500" : "text-zinc-300")} />
+                    </div>
+                  </div>
+                </th>
                 <th className="px-6 py-4">Last Reminder</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
